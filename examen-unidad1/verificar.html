@@ -44,6 +44,10 @@
         nota = m[1].replace(",", "."); intento = m[2];
         const esperado = await Calificar.codigoEntrega(nombre, codigo, Number(nota), Number(intento));
         valido = esperado.toLowerCase() === cod.toLowerCase();
+        // Si al mandar la línea agregaron o quitaron una coma en el nombre, se prueba con la coma en cada espacio.
+        if (!valido) for (const n of [nombre.replace(/,\s*/, " "), ...[...nombre.matchAll(/ /g)].map((m) => nombre.slice(0, m.index) + "," + nombre.slice(m.index))]) {
+          if ((await Calificar.codigoEntrega(n, codigo, Number(nota), Number(intento))).toLowerCase() === cod.toLowerCase()) { valido = true; break; }
+        }
       }
       const tr = document.createElement("tr");
       tr.innerHTML = "<td>" + nombre + "</td><td>" + codigo + "</td><td>" + nota.replace(".", ",") + "</td><td>" + intento + "</td><td class='" + (valido ? "ok" : "no") + "'>" + (valido ? "sí" : "no") + "</td>";
