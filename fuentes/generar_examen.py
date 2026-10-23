@@ -21,6 +21,8 @@ sys.path.insert(0, str(RAIZ.parent / "practica_unidad1"))
 import generar as g  # noqa: E402  (las respuestas numéricas viven ahí)
 
 SAL = "est212-unidad1-2026"
+CIERRE_ISO = "2026-10-23T08:45:00-05:00"      # hora de Lima
+CIERRE_TXT = "8:45 a. m. del viernes 23"
 
 
 def normalizar(x):
@@ -161,7 +163,7 @@ PLANTILLA = """<!DOCTYPE html>
   <div class="aviso">
     Diez ejercicios, 2 puntos cada uno, nota sobre 20. Los datos son ilustrativos. Resuelvan en el cuaderno o en Excel
     y escriban aquí solo el resultado: los números con coma o con punto (0,2787 o 0.2787), las probabilidades con
-    cuatro decimales. <b>Hay un solo intento</b>: revisen todo antes de apretar <b>Calificar</b>. La página les da la nota y un
+    cuatro decimales. <b>Hay un solo intento</b> y el examen <b>cierra a las __CIERRE_TXT__</b>: revisen todo antes de apretar <b>Calificar</b>. La página les da la nota y un
     <b>código de entrega</b> que mandan al profesor junto con la foto de su resolución. Sin la resolución, el código no vale.
   </div>
   <div class="datos">
@@ -177,6 +179,8 @@ PLANTILLA = """<!DOCTYPE html>
 <script src="calificar.js"></script>
 <script>
   const EJ = __DATOS__;
+  const CIERRE = new Date("__CIERRE__");
+  const cerrado = () => Date.now() >= CIERRE.getTime();
   const form = document.getElementById("examen");
   const btn = document.getElementById("btn");
   const campoNombre = document.getElementById("nombre");
@@ -218,6 +222,9 @@ PLANTILLA = """<!DOCTYPE html>
     m.className = "marca " + (ok ? "bien" : "mal"); m.textContent = ok ? "✓" : "✗";
   }
 
+  if (cerrado()) { bloquear(); btn.textContent = "Examen cerrado a las __CIERRE_TXT__"; }
+  setInterval(() => { if (cerrado() && !btn.disabled) { bloquear(); btn.textContent = "Examen cerrado a las __CIERRE_TXT__"; } }, 15000);
+
   // Si ya entregó con ese código en este navegador, se le muestra su resultado y no puede volver a intentar.
   campoCodigo.addEventListener("change", () => {
     const g = leerGuardado(campoCodigo.value);
@@ -226,6 +233,7 @@ PLANTILLA = """<!DOCTYPE html>
 
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
+    if (cerrado()) { alert("El examen cerró a las __CIERRE_TXT__. Ya no se reciben entregas."); bloquear(); btn.textContent = "Examen cerrado"; return; }
     const nombre = campoNombre.value.trim();
     const codigo = campoCodigo.value.trim();
     if (nombre.length < 5 || codigo.length < 4) { alert("Escriban sus apellidos y nombres y su código de estudiante."); return; }
@@ -285,7 +293,7 @@ def main():
     ejercicios = construir()
     publico = [{"n": e["n"], "campos": [{"id": c["id"], "tipo": c["tipo"], "puntos": c["puntos"], "hashes": c["hashes"]} for c in e["campos"]]}
                for e in ejercicios]
-    pagina = PLANTILLA.replace("__EJERCICIOS__", html_ejercicios(ejercicios)).replace("__DATOS__", json.dumps(publico, ensure_ascii=False))
+    pagina = PLANTILLA.replace("__EJERCICIOS__", html_ejercicios(ejercicios)).replace("__DATOS__", json.dumps(publico, ensure_ascii=False)).replace("__CIERRE__", CIERRE_ISO).replace("__CIERRE_TXT__", CIERRE_TXT)
     destino = RAIZ / "examen-unidad1" / "index.html"
     destino.write_text(pagina, encoding="utf-8")
     # Las respuestas en claro, solo para el docente: no se publican (está en .gitignore).
