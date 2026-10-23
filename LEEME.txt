@@ -1,0 +1,41 @@
+SITIO DE EST212 · ESTADÍSTICA INFERENCIAL · ARQUITECTURA Y URBANISMO
+Repositorio público vl4dimr/est212 · publicado en https://vl4dimr.github.io/est212/
+
+QUÉ HAY
+
+  index.html                     la portada: enlaces al examen y al PDF
+  examen-unidad1/index.html      el examen de la Unidad I, autocalificado (generado)
+  examen-unidad1/calificar.js    cómo se califica: hash sha-256 de cada respuesta
+                                 normalizada; la clave NO está en la página
+  examen-unidad1/verificar.html  para el docente: pega los códigos de entrega y dice
+                                 cuáles son válidos
+  practicas/Practica_Unidad_I.pdf  los mismos diez ejercicios, en papel
+  fuentes/generar_examen.py      arma el examen desde ../practica_unidad1/generar.py
+  fuentes/probar_examen.mjs      prueba sin navegador: la clave da 20/20, una respuesta
+                                 cambiada no pasa, las variantes aceptadas pasan
+  fuentes/respuestas_en_claro.json  la clave normalizada; está en .gitignore, no se sube
+
+CÓMO FUNCIONA LA ENTREGA
+
+  El estudiante pone apellidos, código, resuelve y aprieta «Calificar». La página
+  marca cada casilla, da la nota sobre 20 (a medio punto) y un código de entrega
+  NOTA-INTENTO-HASH, que pega en la tarea del aula virtual junto con la foto de su
+  resolución. Puede volver a intentar: el intento sube y el código cambia.
+  El docente pega las líneas en examen-unidad1/verificar.html: recalcula el hash
+  con el nombre, el código, la nota y el intento. Una nota cambiada a mano no
+  coincide. La sal está en calificar.js: quien lea el código fuente podría
+  fabricar un código, por eso la foto de la resolución es obligatoria.
+
+TOLERANCIAS
+
+  Probabilidades (menores que 1): se compara a tres decimales (0,0668 ≈ 0,067).
+  Lo demás: a dos decimales. Se aceptan además variantes razonables (5 noches,
+  3,55 de desviación, 1,72 m). Para cambiar una respuesta o agregar variantes:
+  CAMPOS en fuentes/generar_examen.py, luego regenerar y volver a correr la prueba.
+
+CÓMO SE ACTUALIZA
+
+  python fuentes/generar_examen.py
+  node fuentes/probar_examen.mjs
+  git add -A && git commit -m "…" && git push
+  (Pages tarda un minuto en reflejar el cambio.)
