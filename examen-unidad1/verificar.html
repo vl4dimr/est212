@@ -24,14 +24,16 @@
      También sirve separado por tabulaciones o punto y coma. El hash se recalcula con el nombre, el código, la nota y el intento; si alguien
      cambió la nota a mano, no coincide.</p>
   <textarea id="entrada" placeholder="Quispe Mamani, Rosa · 241234 · 17,5/20 · 17.5-1-a7f3c2d1"></textarea>
-  <button id="btn">Verificar</button>
+  <button id="btn">Verificar</button> <button id="csv" style="background:#2E6F8F;display:none">Descargar Excel (CSV)</button>
+  <p id="resumen" style="margin-top:10px"></p>
   <table id="tabla" style="display:none"><thead><tr><th>Estudiante</th><th>Código</th><th>Nota</th><th>Intento</th><th>Válido</th></tr></thead><tbody></tbody></table>
 </main>
 <script src="calificar.js"></script>
 <script>
+  let filas = [];
   document.getElementById("btn").onclick = async () => {
-    const lineas = document.getElementById("entrada").value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-    const cuerpo = document.querySelector("#tabla tbody"); cuerpo.innerHTML = "";
+    const lineas = document.getElementById("entrada").value.split(/\r?\n/).map((l) => l.replace(/^Examen Unidad I\s*·\s*/i, "").trim()).filter(Boolean);
+    const cuerpo = document.querySelector("#tabla tbody"); cuerpo.innerHTML = ""; filas = [];
     for (const l of lineas) {
       const partes = l.split(/\s*[·;\t]\s*|\s{2,}/).map((p) => p.trim()).filter(Boolean);
       const cod = partes[partes.length - 1] || "";
@@ -46,8 +48,21 @@
       const tr = document.createElement("tr");
       tr.innerHTML = "<td>" + nombre + "</td><td>" + codigo + "</td><td>" + nota.replace(".", ",") + "</td><td>" + intento + "</td><td class='" + (valido ? "ok" : "no") + "'>" + (valido ? "sí" : "no") + "</td>";
       cuerpo.appendChild(tr);
+      filas.push([nombre, codigo, nota.replace(".", ","), intento, valido ? "sí" : "no"]);
     }
     document.getElementById("tabla").style.display = lineas.length ? "table" : "none";
+    document.getElementById("csv").style.display = lineas.length ? "inline-block" : "none";
+    const validas = filas.filter((f) => f[4] === "sí");
+    const prom = validas.length ? (validas.reduce((s, f) => s + Number(f[2].replace(",", ".")), 0) / validas.length) : 0;
+    document.getElementById("resumen").textContent = lineas.length ? (filas.length + " líneas · " + validas.length + " válidas · promedio " + prom.toFixed(1).replace(".", ",") + " / 20") : "";
+  };
+  document.getElementById("csv").onclick = () => {
+    // Punto y coma y BOM: Excel en español lo abre en columnas, con tildes bien.
+    const cab = ["Estudiante", "Código", "Nota", "Intento", "Válido"];
+    const texto = "﻿" + [cab, ...filas].map((f) => f.map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(";")).join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([texto], { type: "text/csv;charset=utf-8" }));
+    a.download = "notas_examen_unidad1.csv"; a.click();
   };
 </script>
 </body>

@@ -110,9 +110,12 @@
     r.style.display = "block";
     r.innerHTML = '<div class="nota">' + String(nota).replace(".", ",") + ' <span style="font-size:18px">/ 20</span></div>' +
       '<div>Intento ' + intento + ' · ' + nombre + ' · ' + codigo + '</div>' +
-      '<div>Su código de entrega: <code id="cod">' + cod + '</code> <button type="button" class="copiar" id="copiar">Copiar</button></div>' +
-      '<small>Péguenlo en la tarea del aula virtual con la foto de su resolución. Las casillas en rojo pueden corregirse y volver a calificar; el código cambia con cada intento.</small>';
-    document.getElementById("copiar").onclick = () => { navigator.clipboard.writeText(nombre + " · " + codigo + " · " + String(nota).replace(".", ",") + "/20 · " + cod).then(() => alert("Copiado.")); };
+      '<div>Su código de entrega: <code id="cod">' + cod + '</code></div>' +
+      '<div style="margin-top:8px"><button type="button" class="copiar" id="copiar">Copiar la línea</button> <a class="copiar" id="wa" style="display:inline-block;color:#fff;text-decoration:none;border-radius:8px;font-weight:700" target="_blank" rel="noopener">Enviar por WhatsApp</a></div>' +
+      '<small>Manden la línea al profesor por WhatsApp o péguenla en la tarea del aula virtual, con la foto de su resolución. Las casillas en rojo pueden corregirse y volver a calificar; el código cambia con cada intento.</small>';
+    const linea = nombre + " · " + codigo + " · " + String(nota).replace(".", ",") + "/20 · " + cod;
+    document.getElementById("copiar").onclick = () => { navigator.clipboard.writeText(linea).then(() => alert("Copiado.")); };
+    document.getElementById("wa").href = "https://wa.me/?text=" + encodeURIComponent("Examen Unidad I · " + linea);
     r.scrollIntoView({ behavior: "smooth" });
     btn.disabled = false; btn.textContent = "Volver a calificar";
   });
