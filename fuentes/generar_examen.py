@@ -232,7 +232,7 @@ def html_ejercicios(ejercicios):
                                   '<span class="u">%s</span></div>' % (e["n"], c["id"], html.escape(c["rotulo"]), nombre, html.escape(c["unidad"])))
                 else:
                     ops = "".join('<label><input type="radio" name="%s" value="op%d">%s</label>' % (nombre, k, html.escape(o)) for k, o in enumerate(c["opciones"]))
-                    partes.append('<div class="mc" id="c_%d_%s"><span class="r" style="font-size:14px;color:var(--gris)">%s</span>%s</div>' % (e["n"], c["id"], html.escape(c["rotulo"]), ops))
+                    partes.append('<div class="mc" id="c_%d_%s">%s</div>' % (e["n"], c["id"], ops))
             partes.append("</div>")
         partes.append("</section>")
     return "".join(partes)
