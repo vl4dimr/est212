@@ -54,7 +54,8 @@
     document.getElementById("csv").style.display = lineas.length ? "inline-block" : "none";
     const validas = filas.filter((f) => f[4] === "sí");
     const prom = validas.length ? (validas.reduce((s, f) => s + Number(f[2].replace(",", ".")), 0) / validas.length) : 0;
-    document.getElementById("resumen").textContent = lineas.length ? (filas.length + " líneas · " + validas.length + " válidas · promedio " + prom.toFixed(1).replace(".", ",") + " / 20") : "";
+    const repetidos = filas.filter((f) => Number(f[3]) > 1).length;
+    document.getElementById("resumen").textContent = lineas.length ? (filas.length + " líneas · " + validas.length + " válidas · promedio " + prom.toFixed(1).replace(".", ",") + " / 20" + (repetidos ? " · " + repetidos + " con más de un intento (antes de la regla de intento único)" : "")) : "";
   };
   document.getElementById("csv").onclick = () => {
     // Punto y coma y BOM: Excel en español lo abre en columnas, con tildes bien.

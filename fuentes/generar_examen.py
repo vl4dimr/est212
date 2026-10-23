@@ -161,8 +161,8 @@ PLANTILLA = """<!DOCTYPE html>
   <div class="aviso">
     Diez ejercicios, 2 puntos cada uno, nota sobre 20. Los datos son ilustrativos. Resuelvan en el cuaderno o en Excel
     y escriban aquí solo el resultado: los números con coma o con punto (0,2787 o 0.2787), las probabilidades con
-    cuatro decimales. Al final aprieten <b>Calificar</b>: la página les da la nota y un <b>código de entrega</b> que
-    pegan en la tarea del aula virtual, junto con la foto de su resolución. Sin la resolución, el código no vale.
+    cuatro decimales. <b>Hay un solo intento</b>: revisen todo antes de apretar <b>Calificar</b>. La página les da la nota y un
+    <b>código de entrega</b> que mandan al profesor junto con la foto de su resolución. Sin la resolución, el código no vale.
   </div>
   <div class="datos">
     <div><label for="nombre">Apellidos y nombres</label><input type="text" id="nombre" autocomplete="name" placeholder="Quispe Mamani, Rosa"></div>
@@ -173,18 +173,72 @@ PLANTILLA = """<!DOCTYPE html>
   </form>
   <div id="resultado"></div>
 </main>
-<footer>Los resultados se comparan sin mostrar la clave. Puede volver a intentarlo: el código de entrega lleva el número de intento. Docente: M. V. Mamani Calisaya.</footer>
+<footer>Los resultados se comparan sin mostrar la clave. Un solo intento por código de estudiante. Docente: M. V. Mamani Calisaya.</footer>
 <script src="calificar.js"></script>
 <script>
   const EJ = __DATOS__;
   const form = document.getElementById("examen");
+  const btn = document.getElementById("btn");
+  const campoNombre = document.getElementById("nombre");
+  const campoCodigo = document.getElementById("codigo");
+  const claveDe = (codigo) => "est212u1_" + codigo.trim();
+
+  function leerGuardado(codigo) {
+    try { const t = localStorage.getItem(claveDe(codigo)); return t ? JSON.parse(t) : null; } catch (e) { return null; }
+  }
+
+  function bloquear() {
+    for (const el of form.querySelectorAll("input")) el.disabled = true;
+    campoNombre.disabled = true; campoCodigo.disabled = true;
+    btn.disabled = true; btn.textContent = "Examen entregado";
+  }
+
+  function mostrar(g, nuevo) {
+    const r = document.getElementById("resultado");
+    const linea = g.nombre + " · " + g.codigo + " · " + String(g.nota).replace(".", ",") + "/20 · " + g.cod;
+    r.style.display = "block";
+    r.innerHTML = '<div class="nota">' + String(g.nota).replace(".", ",") + ' <span style="font-size:18px">/ 20</span></div>' +
+      '<div>' + g.nombre + ' · ' + g.codigo + ' · entregado el ' + g.fecha + '</div>' +
+      '<div>Su código de entrega: <code id="cod">' + g.cod + '</code></div>' +
+      '<div style="margin-top:8px"><button type="button" class="copiar" id="copiar">Copiar la línea</button> <a class="copiar" id="wa" style="display:inline-block;color:#fff;text-decoration:none;border-radius:8px;font-weight:700" target="_blank" rel="noopener">Enviar por WhatsApp</a></div>' +
+      '<small>' + (nuevo ? "Este fue su único intento. " : "Este código ya se entregó con este código de estudiante. ") +
+      'Manden la línea al profesor por WhatsApp o péguenla en la tarea del aula virtual, con la foto de su resolución.</small>';
+    document.getElementById("copiar").onclick = () => { navigator.clipboard.writeText(linea).then(() => alert("Copiado.")); };
+    document.getElementById("wa").href = "https://wa.me/?text=" + encodeURIComponent("Examen Unidad I · " + linea);
+    if (g.marcas) for (const [id, ok] of Object.entries(g.marcas)) pintar(id, ok);
+    bloquear();
+    r.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function pintar(id, ok) {
+    const caja = document.getElementById(id);
+    if (!caja) return;
+    caja.classList.remove("bien", "mal"); caja.classList.add(ok ? "bien" : "mal");
+    let m = caja.querySelector(".marca"); if (!m) { m = document.createElement("span"); m.className = "marca"; caja.appendChild(m); }
+    m.className = "marca " + (ok ? "bien" : "mal"); m.textContent = ok ? "✓" : "✗";
+  }
+
+  // Si ya entregó con ese código en este navegador, se le muestra su resultado y no puede volver a intentar.
+  campoCodigo.addEventListener("change", () => {
+    const g = leerGuardado(campoCodigo.value);
+    if (g) { campoNombre.value = g.nombre; mostrar(g, false); }
+  });
+
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
-    const nombre = document.getElementById("nombre").value.trim();
-    const codigo = document.getElementById("codigo").value.trim();
+    const nombre = campoNombre.value.trim();
+    const codigo = campoCodigo.value.trim();
     if (nombre.length < 5 || codigo.length < 4) { alert("Escriban sus apellidos y nombres y su código de estudiante."); return; }
-    const btn = document.getElementById("btn"); btn.disabled = true;
-    let puntos = 0;
+    const previo = leerGuardado(codigo);
+    if (previo) { mostrar(previo, false); return; }
+    const vacios = EJ.reduce((n, e) => n + e.campos.filter((c) => {
+      if (c.tipo === "num") return !((form.elements["e" + e.n + "_" + c.id] || {}).value || "").trim();
+      return !form.querySelector('input[name="e' + e.n + '_' + c.id + '"]:checked');
+    }).length, 0);
+    const aviso = "Solo hay UN intento. Después de calificar no se puede cambiar nada." + (vacios ? " Tienen " + vacios + " casilla(s) en blanco." : "") + " ¿Entregan ahora?";
+    if (!confirm(aviso)) return;
+    btn.disabled = true;
+    let puntos = 0; const marcas = {};
     for (const e of EJ) {
       for (const c of e.campos) {
         let resp = "";
@@ -192,28 +246,14 @@ PLANTILLA = """<!DOCTYPE html>
         else { const el = form.querySelector('input[name="e' + e.n + '_' + c.id + '"]:checked'); resp = el ? el.value : ""; }
         const ok = await Calificar.esCorrecto(e.n, c.id, c.tipo, resp, c.hashes);
         if (ok) puntos += c.puntos;
-        const caja = document.getElementById("c_" + e.n + "_" + c.id);
-        caja.classList.remove("bien", "mal"); caja.classList.add(ok ? "bien" : "mal");
-        let m = caja.querySelector(".marca"); if (!m) { m = document.createElement("span"); m.className = "marca"; caja.appendChild(m); }
-        m.className = "marca " + (ok ? "bien" : "mal"); m.textContent = ok ? "✓" : "✗";
+        marcas["c_" + e.n + "_" + c.id] = ok;
       }
     }
     const nota = Math.round(puntos * 2) / 2;      // a medio punto
-    const clave = "est212u1_" + codigo;
-    let intento = 1; try { intento = (Number(localStorage.getItem(clave)) || 0) + 1; localStorage.setItem(clave, intento); } catch (e) {}
-    const cod = await Calificar.codigoEntrega(nombre, codigo, nota, intento);
-    const r = document.getElementById("resultado");
-    r.style.display = "block";
-    r.innerHTML = '<div class="nota">' + String(nota).replace(".", ",") + ' <span style="font-size:18px">/ 20</span></div>' +
-      '<div>Intento ' + intento + ' · ' + nombre + ' · ' + codigo + '</div>' +
-      '<div>Su código de entrega: <code id="cod">' + cod + '</code></div>' +
-      '<div style="margin-top:8px"><button type="button" class="copiar" id="copiar">Copiar la línea</button> <a class="copiar" id="wa" style="display:inline-block;color:#fff;text-decoration:none;border-radius:8px;font-weight:700" target="_blank" rel="noopener">Enviar por WhatsApp</a></div>' +
-      '<small>Manden la línea al profesor por WhatsApp o péguenla en la tarea del aula virtual, con la foto de su resolución. Las casillas en rojo pueden corregirse y volver a calificar; el código cambia con cada intento.</small>';
-    const linea = nombre + " · " + codigo + " · " + String(nota).replace(".", ",") + "/20 · " + cod;
-    document.getElementById("copiar").onclick = () => { navigator.clipboard.writeText(linea).then(() => alert("Copiado.")); };
-    document.getElementById("wa").href = "https://wa.me/?text=" + encodeURIComponent("Examen Unidad I · " + linea);
-    r.scrollIntoView({ behavior: "smooth" });
-    btn.disabled = false; btn.textContent = "Volver a calificar";
+    const cod = await Calificar.codigoEntrega(nombre, codigo, nota, 1);
+    const g = { nombre, codigo, nota, cod, fecha: new Date().toLocaleString("es-PE"), marcas };
+    try { localStorage.setItem(claveDe(codigo), JSON.stringify(g)); } catch (e) {}
+    mostrar(g, true);
   });
 </script>
 </body>
