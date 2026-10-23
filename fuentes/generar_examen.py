@@ -21,8 +21,8 @@ sys.path.insert(0, str(RAIZ.parent / "practica_unidad1"))
 import generar as g  # noqa: E402  (las respuestas numéricas viven ahí)
 
 SAL = "est212-unidad1-2026"
-CIERRE_ISO = "2026-10-23T08:50:00-05:00"      # hora de Lima
-CIERRE_TXT = "8:50 a. m. del viernes 23"
+CIERRE_ISO = "2026-10-23T07:53:00-05:00"      # hora de Lima
+CIERRE_TXT = "7:53 a. m. del viernes 23"
 
 
 def normalizar(x):
